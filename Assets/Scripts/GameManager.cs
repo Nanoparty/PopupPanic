@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour
 
     public WindowType ActiveWindow;
 
+    public Texture2D MouseCursor;
+
     public float MinDelay;
     public float MaxDelay;
     public int MinCount;
@@ -80,9 +82,15 @@ public class GameManager : MonoBehaviour
 
     private Coroutine ActiveCoroutine;
 
+    public bool gameover;
+
     private void Start()
     {
+        SoundManager.sm.PlayMusic();
+        Cursor.SetCursor(MouseCursor, Vector2.zero, CursorMode.ForceSoftware);
+
         StartButton.onClick.AddListener(() => {
+            SoundManager.sm.PlayStartSound();
             GameStart = true;
             StartWindow.SetActive(false);
             MailNotificationIcon.SetActive(true);
@@ -91,11 +99,13 @@ public class GameManager : MonoBehaviour
         MailIcon.onClick.AddListener(() => {
             if (!GameStart) return;
 
+            SoundManager.sm.PlayWindowOpenSound();
             EmailWindow.SetActive(true);
             MailNotificationIcon.SetActive(false);
         });
 
         ClaimPrize.onClick.AddListener(() => {
+            SoundManager.sm.PlayWindowOpenSound();
             PrizeWindow.SetActive(true);
             TimerWindow.SetActive(true);
             TimerRunning = true;
@@ -111,14 +121,14 @@ public class GameManager : MonoBehaviour
         MenuIcon.onClick.AddListener(() => {
             if (MenuOpen)
             {
-                
+                SoundManager.sm.PlayWindowCloseSound();
                 MenuOpen = false;
                 MenuWindow.SetActive(false);
                 TimerRunning = true;
             }
             else
             {
-                
+                SoundManager.sm.PlayWindowOpenSound();
                 MenuOpen = true;
                 MenuWindow.SetActive(true);
                 TimerRunning = false;
@@ -126,6 +136,7 @@ public class GameManager : MonoBehaviour
         });
 
         ResumeButton.onClick.AddListener(() => {
+            SoundManager.sm.PlayWindowCloseSound();
             MenuWindow.SetActive(false);
             MenuOpen = false;
             if (PrizeWindow.activeSelf && (TotalTime - (int)Clock) > 0){
@@ -166,12 +177,14 @@ public class GameManager : MonoBehaviour
             CountdownTimer.text = (TotalTime - (int)Clock).ToString();
         }
 
-        if ((TotalTime - (int)Clock) <= 0)
+        if (!gameover && (TotalTime - (int)Clock) <= 0)
         {
+            gameover = true;
             TimerRunning = false;
             CountdownTimer.text = "0";
             DefeatTimeoutWindow.SetActive(true);
             ActiveWindow = WindowType.Defeat;
+            SoundManager.sm.PlayFailureSound();
         }
 
         if (NumActiveAds > 0)
@@ -198,6 +211,7 @@ public class GameManager : MonoBehaviour
 
         for (int i = 0; i < numAds; i++)
         {
+            SoundManager.sm.PlayWindowOpenSound();
             Vector2 pos = new Vector2(Random.Range(-400, 400), Random.Range(-90, 140));
             GameObject ad = Instantiate(PopupAds[Random.Range(0, PopupAds.Count)], Vector2.zero, Quaternion.identity);
             ad.transform.parent = PopupContainer.transform;
@@ -273,7 +287,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        if (StarWars.value == 0)
+        if (StarWars.value == -1)
         {
             complete = false;
             error_message = "ERROR: Star Wars Answer is Missing.";
@@ -282,7 +296,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        if (StarWars.value == 2)
+        if (StarWars.value == 1)
         {
             complete = false;
             error_message = "ERROR: Star Wars Answer is Incorrect.";
@@ -398,6 +412,8 @@ public class GameManager : MonoBehaviour
             ErrorMessage.text = error_message;
             return;
         }
+
+        SoundManager.sm.PlaySucessSound();
 
         ErrorMessage.gameObject.SetActive(false);
         TimerRunning = false;
